@@ -1,37 +1,41 @@
 import { motion } from "framer-motion";
-import type { Page } from "../journal/types";
+import type { Page, Placement } from "../journal/types";
 import { BlockView } from "./BlockView";
+import { DecorationView } from "./DecorationView";
+import { entranceFor } from "./entranceVariants";
 
 interface PageViewProps {
   page: Page;
   accent: string;
 }
 
+function positionStyle(p: Placement) {
+  return {
+    left: `${p.x}%`,
+    top: `${p.y}%`,
+    width: `${p.width ?? 70}%`,
+    zIndex: p.z ?? 1,
+    transform: `translate(-50%, -50%) rotate(${p.rotate ?? 0}deg)`,
+  } as const;
+}
+
 /**
- * Renders one journal page. Blocks are absolutely positioned using their
- * percentage-based placement, then given a slight rotation for the handmade,
- * scrapbook-like feel. Blocks stagger in as the page settles.
+ * Renders one journal page. Blocks and decorations are absolutely positioned
+ * using their percentage-based placement. Each item settles into its final
+ * (fixed) tilt while an inner wrapper plays one of a few varied entrance
+ * styles, so the page doesn't feel like everything fades up identically.
  */
 export function PageView({ page, accent }: PageViewProps) {
+  const blockCount = page.blocks.length;
+
   return (
     <div className="paper-grain relative h-full w-full overflow-hidden">
-      {page.blocks.map((block, i) => {
-        const p = block.placement;
-        return (
+      {page.blocks.map((block, i) => (
+        <div key={block.id} className="absolute" style={positionStyle(block.placement)}>
           <motion.div
-            key={block.id}
-            className="absolute"
-            style={{
-              left: `${p.x}%`,
-              top: `${p.y}%`,
-              width: `${p.width ?? 70}%`,
-              zIndex: p.z ?? 1,
-              translateX: "-50%",
-              translateY: "-50%",
-              rotate: `${p.rotate ?? 0}deg`,
-            }}
-            initial={{ opacity: 0, y: 14 }}
-            animate={{ opacity: 1, y: 0 }}
+            variants={entranceFor(block.id)}
+            initial="hidden"
+            animate="show"
             transition={{
               duration: 0.5,
               delay: 0.15 + i * 0.12,
@@ -40,8 +44,29 @@ export function PageView({ page, accent }: PageViewProps) {
           >
             <BlockView block={block} accent={accent} />
           </motion.div>
-        );
-      })}
+        </div>
+      ))}
+
+      {page.decorations?.map((decoration, i) => (
+        <div
+          key={decoration.id}
+          className="absolute"
+          style={positionStyle(decoration.placement)}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.4 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{
+              type: "spring",
+              stiffness: 260,
+              damping: 14,
+              delay: 0.4 + blockCount * 0.12 + i * 0.08,
+            }}
+          >
+            <DecorationView decoration={decoration} />
+          </motion.div>
+        </div>
+      ))}
     </div>
   );
 }

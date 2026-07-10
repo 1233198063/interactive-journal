@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import type { EnvelopeBlock } from "../journal/types";
 
@@ -30,26 +31,6 @@ export function Envelope({ block, accent }: EnvelopeProps) {
           className="relative aspect-[7/4.4] w-full rounded-[6px] shadow-[var(--shadow-paper)]"
           style={{ backgroundColor: "var(--color-paper-deep)" }}
         >
-          {/* The letter that slides out when open */}
-          <AnimatePresence>
-            {open && (
-              <motion.div
-                initial={{ y: 0, opacity: 0, scale: 0.96 }}
-                animate={{ y: "-58%", opacity: 1, scale: 1 }}
-                exit={{ y: 0, opacity: 0, scale: 0.96 }}
-                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-                className="absolute inset-x-[8%] top-[8%] z-10 rounded-[4px] bg-white/95 px-4 py-3 text-left shadow-[var(--shadow-lift)]"
-              >
-                <p
-                  className="text-[15px] leading-snug text-[var(--color-ink)]"
-                  style={{ fontFamily: "var(--font-hand)" }}
-                >
-                  {block.message}
-                </p>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           {/* Front pocket (covers the letter's bottom) */}
           <div
             className="absolute inset-x-0 bottom-0 z-20 h-[62%] rounded-b-[6px]"
@@ -89,8 +70,46 @@ export function Envelope({ block, accent }: EnvelopeProps) {
         className="text-[15px] text-[var(--color-ink-soft)]"
         style={{ fontFamily: "var(--font-hand)" }}
       >
-        {open ? "tap to close" : block.frontLabel}
+        {open ? "tap outside to close" : block.frontLabel}
       </span>
+
+      {/*
+        The opened letter is portaled to the document body instead of being
+        positioned inside the (small, edge-hugging) envelope box. That way a
+        long message is never clipped by a page's overflow-hidden, no matter
+        where the envelope sits on the page.
+      */}
+      {createPortal(
+        <AnimatePresence>
+          {open && (
+            <motion.div
+              className="fixed inset-0 z-[999] flex items-center justify-center bg-[var(--color-ink)]/30 p-6 backdrop-blur-[2px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              onClick={() => setOpen(false)}
+            >
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: 16 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.92, y: 10 }}
+                transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
+                onClick={(e) => e.stopPropagation()}
+                className="max-h-[80vh] w-full max-w-sm overflow-y-auto rounded-[4px] bg-white px-6 py-5 text-left shadow-[var(--shadow-lift)]"
+              >
+                <p
+                  className="whitespace-pre-line text-xl leading-snug text-[var(--color-ink)]"
+                  style={{ fontFamily: "var(--font-hand)" }}
+                >
+                  {block.message}
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </div>
   );
 }

@@ -28,6 +28,12 @@ export interface Page {
   /** Optional short label shown in the page indicator. */
   label?: string;
   blocks: Block[];
+  /**
+   * Purely ornamental scrapbook flair — stickers, tape, pins, doodles.
+   * Separate from `blocks` because decorations carry no content, so a page
+   * can be dressed up without touching the reading experience.
+   */
+  decorations?: Decoration[];
 }
 
 /** Position + rotation of a block on the page, giving the "imperfect" feel. */
@@ -55,8 +61,8 @@ export interface TextBlock extends BaseBlock {
   content: string;
   /** Handwritten vs. printed feel. */
   font?: "hand" | "serif";
-  /** Decorative washi tape strip behind/over the note. */
-  tape?: boolean;
+  /** Decorative washi tape strip behind/over the note. Defaults to "solid". */
+  tape?: boolean | TapeVariant;
 }
 
 export interface ImageBlock extends BaseBlock {
@@ -64,6 +70,8 @@ export interface ImageBlock extends BaseBlock {
   src: string;
   alt: string;
   caption?: string;
+  /** How the photo is mounted on the page. Defaults to "plain". */
+  frame?: "plain" | "polaroid" | "torn";
 }
 
 export interface AudioBlock extends BaseBlock {
@@ -79,4 +87,46 @@ export interface EnvelopeBlock extends BaseBlock {
   frontLabel: string;
   /** The message revealed inside. */
   message: string;
+}
+
+// ---------------------------------------------------------------------------
+// Decorations — ornamental scrapbook flair, no reading content of their own.
+// ---------------------------------------------------------------------------
+
+export type TapeVariant = "solid" | "stripe" | "dot" | "gingham";
+
+export type Decoration =
+  | TapeDecoration
+  | StickerDecoration
+  | PinDecoration
+  | DoodleDecoration;
+
+interface BaseDecoration {
+  id: string;
+  placement: Placement;
+}
+
+export interface TapeDecoration extends BaseDecoration {
+  kind: "tape";
+  variant?: TapeVariant;
+  color?: string;
+}
+
+/** An emoji-based sticker — cheap to author, easy to make more of. */
+export interface StickerDecoration extends BaseDecoration {
+  kind: "sticker";
+  emoji: string;
+}
+
+export interface PinDecoration extends BaseDecoration {
+  kind: "pin";
+  variant?: "pin" | "paperclip";
+}
+
+export type DoodleShape = "heart" | "star" | "swirl" | "arrow" | "sparkle";
+
+export interface DoodleDecoration extends BaseDecoration {
+  kind: "doodle";
+  shape: DoodleShape;
+  color?: string;
 }
