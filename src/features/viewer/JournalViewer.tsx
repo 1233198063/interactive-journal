@@ -3,6 +3,7 @@ import { AnimatePresence, motion, type Variants } from "framer-motion";
 import type { Journal } from "../journal/types";
 import { themeAccent } from "../journal/theme";
 import { PageView } from "./PageView";
+import { FortuneJarModal } from "../fortune/FortuneJarModal";
 
 /** Page-turn variants. `custom` carries the navigation direction. */
 const pageVariants: Variants = {
@@ -24,6 +25,7 @@ export function JournalViewer({ journal }: JournalViewerProps) {
   const [index, setIndex] = useState(0);
   // direction: 1 forward, -1 back — drives the turn animation.
   const [direction, setDirection] = useState(1);
+  const [fortuneOpen, setFortuneOpen] = useState(false);
   const accent = themeAccent[journal.theme].accent;
 
   const total = journal.pages.length;
@@ -37,6 +39,20 @@ export function JournalViewer({ journal }: JournalViewerProps) {
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-5 px-4 py-6">
+      {journal.fortune && (
+        <div className="flex w-full max-w-md justify-end">
+          <button
+            type="button"
+            onClick={() => setFortuneOpen(true)}
+            aria-label="打开幸福签筒"
+            className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full text-xl text-white shadow-[var(--shadow-paper)]"
+            style={{ backgroundColor: accent }}
+          >
+            🪄
+          </button>
+        </div>
+      )}
+
       {/* Page stage */}
       <div
         className="relative w-full max-w-md flex-1"
@@ -100,6 +116,10 @@ export function JournalViewer({ journal }: JournalViewerProps) {
         {page.label ? `${page.label} · ` : ""}
         {index + 1} / {total}
       </p>
+
+      {fortuneOpen && (
+        <FortuneJarModal journal={journal} onClose={() => setFortuneOpen(false)} />
+      )}
     </div>
   );
 }

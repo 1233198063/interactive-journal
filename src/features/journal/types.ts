@@ -18,6 +18,10 @@ export interface Journal {
   /** Accent theme for the cover and gift wrapping. */
   theme: JournalTheme;
   coverMessage?: string;
+  /** Recipient's birthday as "MM-DD", used to unlock the birthday-only fortune stick. */
+  recipientBirthday?: string;
+  /** Optional hand-drawn fortune-stick jar, reachable from anywhere in the viewer. */
+  fortune?: FortuneJarConfig;
   pages: Page[];
 }
 
@@ -129,4 +133,80 @@ export interface DoodleDecoration extends BaseDecoration {
   kind: "doodle";
   shape: DoodleShape;
   color?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Fortune jar — an optional drawing-lots ritual, independent of the page/
+// block model. One stick is drawn at a time from a jar of 30; a few extra
+// sticks stay hidden until a time-based condition is met.
+// ---------------------------------------------------------------------------
+
+export type FortuneCategory =
+  | "funny"
+  | "encourage"
+  | "memory"
+  | "music"
+  | "happiness"
+  | "gift";
+
+export interface TextFortuneContent {
+  format: "text";
+  message: string;
+}
+
+export interface PhotoFortuneContent {
+  format: "photo";
+  /** Empty string renders a "to be filled in" placeholder instead of a broken image. */
+  src: string;
+  alt: string;
+  caption?: string;
+}
+
+export interface VideoFortuneContent {
+  format: "video";
+  src: string;
+  caption?: string;
+}
+
+export interface AudioFortuneContent {
+  format: "audio";
+  src: string;
+  caption?: string;
+}
+
+export interface GiftFortuneContent {
+  format: "gift";
+  message: string;
+  /** A short redeemable line, e.g. "good for one real hug". */
+  redeemable?: string;
+}
+
+export type FortuneContent =
+  | TextFortuneContent
+  | PhotoFortuneContent
+  | VideoFortuneContent
+  | AudioFortuneContent
+  | GiftFortuneContent;
+
+export type FortuneFormat = FortuneContent["format"];
+
+export interface FortuneStick {
+  id: string;
+  category: FortuneCategory;
+  content: FortuneContent;
+}
+
+/** When a hidden stick becomes eligible to be drawn. */
+export type FortuneUnlockRule =
+  | { kind: "birthday" }
+  | { kind: "night"; startHour: number; endHour: number }
+  | { kind: "streak"; days: number };
+
+export interface HiddenFortuneStick extends FortuneStick {
+  unlock: FortuneUnlockRule;
+}
+
+export interface FortuneJarConfig {
+  sticks: FortuneStick[];
+  hiddenSticks: HiddenFortuneStick[];
 }

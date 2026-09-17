@@ -1,4 +1,5 @@
 import type { Journal } from "./types";
+import { sampleFortune } from "../fortune/sampleFortune";
 
 /**
  * Hardcoded sample content for the MVP.
@@ -10,11 +11,13 @@ import type { Journal } from "./types";
  */
 export const sampleJournal: Journal = {
   id: "sample-birthday",
-  title: "Happy Birthday, Mia",
-  recipient: "Mia",
-  authors: ["Yue", "The gang"],
+  title: "Happy Birthday, Amy",
+  recipient: "Amy",
+  authors: ["Yuexin"],
   theme: "blush",
   coverMessage: "A little something we made, page by page.",
+  recipientBirthday: "08-01", // TODO: replace with the real birthday (MM-DD)
+  fortune: sampleFortune,
   pages: [
     {
       id: "p1",
