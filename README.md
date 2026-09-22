@@ -15,7 +15,17 @@ Working today:
 - ✉️ **Interactive envelopes** — tap to lift the flap and reveal a hidden note
 - 🖼️ Photos with handwritten captions, washi-tape text notes
 - 🎧 **Audio notes** with a play/pause tape-player widget
+- 🪄 **Fortune jar** — shake (or tap) a hand-drawn bucket to draw one of 30
+  sticks, plus 3 hidden sticks (birthday-only, night-only, streak-only)
 - 📱 Mobile-first, handmade "paper" aesthetic
+
+Author-only local tool (never shipped in the shared journal link): visit
+`npm run dev` then `http://localhost:5173/?tool=sticker` for a **sticker
+maker** — upload a photo, pick a cartoon/sketch filter and a white-border
+cutout or plain square sticker style, and download a PNG to hand-place into
+`sampleJournal.ts`. The cutout style downloads a ~40MB in-browser background-
+removal model on first use (cached afterward); no image ever leaves the
+browser.
 
 Deferred by design (per the MVP): auth, AI, marketplace, templates,
 real-time collaboration, comments, notifications.
