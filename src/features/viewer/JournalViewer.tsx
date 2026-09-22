@@ -1,26 +1,54 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion, type Variants } from "framer-motion";
 import type { Journal, Page } from "../journal/types";
-import { themeAccent } from "../journal/theme";
 import { PageView } from "./PageView";
 import { FortuneJarModal } from "../fortune/FortuneJarModal";
+import { ColorPanel } from "./ColorPanel";
 
 /**
- * Page-turn variants for the page actually being turned. `custom` carries
- * the navigation direction. Only one side of a spread turns at a time —
- * like a real book, not two pages flipping in unison.
+ * Page-turn variants for one slot (left or right half of the stage).
+ * `custom` is refreshed by AnimatePresence even for the element that's
+ * exiting, so — unlike swapping between two different `variants` objects —
+ * this stays correct no matter which direction the *previous* turn went.
+ *
+ * Only the page actually being turned (`turns: true`) gets the flip; it
+ * rotates a full half-turn around the spine edge so it visually swings over
+ * and settles on top of the other page, like a real leaf landing once
+ * turned. The page that isn't turning just settles in with a fade.
  */
-const turnVariants: Variants = {
-  enter: (dir: number) => ({ rotateY: dir > 0 ? 75 : -75, opacity: 0 }),
-  center: { rotateY: 0, opacity: 1 },
-  exit: (dir: number) => ({ rotateY: dir > 0 ? -75 : 75, opacity: 0 }),
+type TurnCustom = { direction: number; turns: boolean; origin: "left" | "right" };
+
+const pageVariants: Variants = {
+  enter: ({ turns, origin }: TurnCustom) =>
+    turns
+      ? { rotateY: 0, opacity: 0, transformOrigin: origin, zIndex: 1 }
+      : { opacity: 0, transformOrigin: origin, zIndex: 1 },
+  center: ({ origin }: TurnCustom) => ({
+    rotateY: 0,
+    opacity: 1,
+    transformOrigin: origin,
+    zIndex: 1,
+  }),
+  exit: ({ direction, turns, origin }: TurnCustom) =>
+    turns
+      ? {
+          // A near-full turn around the spine so the page visually sweeps
+          // over and covers its neighbor, not just tilts in place.
+          rotateY: direction > 0 ? -170 : 170,
+          opacity: 1,
+          transformOrigin: origin,
+          zIndex: 2,
+        }
+      : { opacity: 0, transformOrigin: origin, zIndex: 1 },
 };
 
-/** The other side of a spread doesn't turn — its content just settles in. */
-const staticVariants: Variants = {
-  enter: { opacity: 0 },
-  center: { opacity: 1 },
-  exit: { opacity: 0 },
+const TURN_TRANSITION = {
+  duration: 0.6,
+  ease: [0.45, 0, 0.55, 1] as const,
+  // zIndex has no meaningful "in-between" value — tweening it smoothly can
+  // leave it briefly fractional, which flickers the stacking order right as
+  // the turning page should land on top. Snap it instantly instead.
+  zIndex: { duration: 0 },
 };
 
 // Shared by the stage and the control rows so everything lines up, growing
@@ -50,6 +78,10 @@ function useMediaQuery(query: string) {
 
 interface JournalViewerProps {
   journal: Journal;
+  /** Repick the whole journal's accent color. */
+  onAccentChange: (color: string) => void;
+  /** Repick one page's accent color, or pass `null` to go back to the journal color. */
+  onPageAccentChange: (pageId: string, color: string | null) => void;
 }
 
 /**
@@ -58,13 +90,18 @@ interface JournalViewerProps {
  * room for one page, so it reads as a single stacked card. Navigating flips
  * between pages (or spreads) with a page-turn transition.
  */
-export function JournalViewer({ journal }: JournalViewerProps) {
+export function JournalViewer({
+  journal,
+  onAccentChange,
+  onPageAccentChange,
+}: JournalViewerProps) {
   const isSpread = useMediaQuery(BOOK_QUERY);
   const [index, setIndex] = useState(0);
   // direction: 1 forward, -1 back — drives the turn animation.
   const [direction, setDirection] = useState(1);
   const [fortuneOpen, setFortuneOpen] = useState(false);
-  const accent = themeAccent[journal.theme].accent;
+  const [colorsOpen, setColorsOpen] = useState(false);
+  const accent = journal.accentColor;
 
   const total = journal.pages.length;
 
@@ -97,15 +134,36 @@ export function JournalViewer({ journal }: JournalViewerProps) {
   // Only the page being turned toward gets the flip: the right page turns
   // when moving forward, the left page turns when moving back — never both
   // at once. Outside of spread mode there's only one page, so it always
-  // turns.
+  // turns. Each slot's pivot sits at the spine (its inner edge) so a turn
+  // sweeps over the neighboring page rather than spinning in place.
   const leftTurns = !isSpread || direction < 0;
   const rightTurns = isSpread && direction > 0;
-  const leftOrigin = isSpread ? "right" : direction > 0 ? "right" : "left";
+  const leftOrigin: "left" | "right" = isSpread
+    ? "right"
+    : direction > 0
+      ? "right"
+      : "left";
+
+  const colorTargets = [
+    { id: leftPage.id, label: leftPage.label ?? "left", color: leftPage.accentColor },
+    ...(rightPage
+      ? [{ id: rightPage.id, label: rightPage.label ?? "right", color: rightPage.accentColor }]
+      : []),
+  ];
 
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-5 px-4 py-6">
-      {journal.fortune && (
-        <div className={`flex w-full justify-end ${STAGE_WIDTH}`}>
+      <div className={`flex w-full items-center justify-between ${STAGE_WIDTH}`}>
+        <button
+          type="button"
+          onClick={() => setColorsOpen(true)}
+          aria-label="Pick colors"
+          className="flex h-12 w-12 cursor-pointer items-center justify-center rounded-full bg-white text-xl shadow-[var(--shadow-paper)]"
+        >
+          🎨
+        </button>
+
+        {journal.fortune && (
           <button
             type="button"
             onClick={() => setFortuneOpen(true)}
@@ -115,8 +173,8 @@ export function JournalViewer({ journal }: JournalViewerProps) {
           >
             🪄
           </button>
-        </div>
-      )}
+        )}
+      </div>
 
       {/* Page stage */}
       <div
@@ -124,19 +182,27 @@ export function JournalViewer({ journal }: JournalViewerProps) {
         style={{ perspective: "1600px" }}
       >
         <div className="absolute inset-0 flex gap-4 sm:gap-6">
-          <AnimatePresence initial={false} mode="popLayout" custom={direction}>
+          <AnimatePresence
+            initial={false}
+            mode="popLayout"
+            custom={{ direction, turns: leftTurns, origin: leftOrigin }}
+          >
             <motion.div
               key={leftIndex}
-              custom={direction}
-              variants={leftTurns ? turnVariants : staticVariants}
+              custom={{ direction, turns: leftTurns, origin: leftOrigin }}
+              variants={pageVariants}
               initial="enter"
               animate="center"
               exit="exit"
-              transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-              style={{ transformOrigin: leftOrigin }}
+              transition={TURN_TRANSITION}
+              style={{ willChange: "transform" }}
               className="h-full min-w-0 flex-1"
             >
-              <PaperCard page={leftPage} accent={accent} className="h-full" />
+              <PaperCard
+                page={leftPage}
+                accent={leftPage.accentColor ?? accent}
+                className="h-full"
+              />
             </motion.div>
           </AnimatePresence>
 
@@ -150,20 +216,28 @@ export function JournalViewer({ journal }: JournalViewerProps) {
                     "linear-gradient(to bottom, transparent, var(--color-paper-shadow) 15%, var(--color-paper-shadow) 85%, transparent)",
                 }}
               />
-              <AnimatePresence initial={false} mode="popLayout" custom={direction}>
+              <AnimatePresence
+                initial={false}
+                mode="popLayout"
+                custom={{ direction, turns: rightTurns, origin: "left" }}
+              >
                 <motion.div
                   key={rightIndex ?? "blank"}
-                  custom={direction}
-                  variants={rightTurns ? turnVariants : staticVariants}
+                  custom={{ direction, turns: rightTurns, origin: "left" }}
+                  variants={pageVariants}
                   initial="enter"
                   animate="center"
                   exit="exit"
-                  transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
-                  style={{ transformOrigin: "left" }}
+                  transition={TURN_TRANSITION}
+                  style={{ willChange: "transform" }}
                   className="h-full min-w-0 flex-1"
                 >
                   {rightPage ? (
-                    <PaperCard page={rightPage} accent={accent} className="h-full" />
+                    <PaperCard
+                      page={rightPage}
+                      accent={rightPage.accentColor ?? accent}
+                      className="h-full"
+                    />
                   ) : (
                     // Last, odd page out — the right side of the book stays
                     // blank rather than stretching the left page to fill it.
@@ -218,6 +292,16 @@ export function JournalViewer({ journal }: JournalViewerProps) {
 
       {fortuneOpen && (
         <FortuneJarModal journal={journal} onClose={() => setFortuneOpen(false)} />
+      )}
+
+      {colorsOpen && (
+        <ColorPanel
+          journalColor={accent}
+          pageTargets={colorTargets}
+          onJournalColor={onAccentChange}
+          onPageColor={onPageAccentChange}
+          onClose={() => setColorsOpen(false)}
+        />
       )}
     </div>
   );

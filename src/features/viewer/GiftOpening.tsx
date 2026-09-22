@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import type { Journal } from "../journal/types";
-import { themeAccent } from "../journal/theme";
+import { softTint } from "../journal/theme";
 
 interface GiftOpeningProps {
   journal: Journal;
@@ -15,7 +15,8 @@ interface GiftOpeningProps {
  */
 export function GiftOpening({ journal, onOpened }: GiftOpeningProps) {
   const [opening, setOpening] = useState(false);
-  const { accent, soft } = themeAccent[journal.theme];
+  const accent = journal.accentColor;
+  const soft = softTint(accent);
 
   const open = () => {
     if (opening) return;

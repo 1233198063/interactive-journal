@@ -15,8 +15,13 @@ export interface Journal {
   recipient: string;
   /** Who made it. */
   authors: string[];
-  /** Accent theme for the cover and gift wrapping. */
-  theme: JournalTheme;
+  /**
+   * Accent color for the cover, gift wrapping, and any page that doesn't set
+   * its own. Any CSS color — not limited to a preset palette, since whoever
+   * is looking at the journal can repick it live (see the color picker in
+   * JournalViewer).
+   */
+  accentColor: string;
   coverMessage?: string;
   /** Recipient's birthday as "MM-DD", used to unlock the birthday-only fortune stick. */
   recipientBirthday?: string;
@@ -25,12 +30,12 @@ export interface Journal {
   pages: Page[];
 }
 
-export type JournalTheme = "blush" | "sage" | "dusk";
-
 export interface Page {
   id: string;
   /** Optional short label shown in the page indicator. */
   label?: string;
+  /** Per-page accent override. Falls back to the journal's accentColor. */
+  accentColor?: string;
   blocks: Block[];
   /**
    * Purely ornamental scrapbook flair — stickers, tape, pins, doodles.

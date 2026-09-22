@@ -10,13 +10,12 @@ import { sampleFortune } from "../fortune/sampleFortune";
  * localized change.
  */
 export const sampleJournal: Journal = {
-  id: "sample-birthday",
-  title: "Happy Birthday, Amy",
+  id: "sample-surprise",
+  title: "Just Because, Amy",
   recipient: "Amy",
   authors: ["Yuexin"],
-  theme: "blush",
+  accentColor: "#a8b89a",
   coverMessage: "A little something we made, page by page.",
-  recipientBirthday: "08-01", // TODO: replace with the real birthday (MM-DD)
   fortune: sampleFortune,
   pages: [
     {
@@ -26,7 +25,7 @@ export const sampleJournal: Journal = {
         {
           id: "p1-title",
           kind: "text",
-          content: "You made it another trip around the sun ☀️",
+          content: "No special occasion — just thinking of you today ☀️",
           font: "hand",
           tape: true,
           placement: { x: 50, y: 22, rotate: -2, width: 78, z: 2 },
@@ -35,7 +34,7 @@ export const sampleJournal: Journal = {
           id: "p1-note",
           kind: "text",
           content:
-            "We couldn't all be in the same room this year, so we built you one instead. Turn the pages — there's more than it looks.",
+            "We couldn't all be in the same room, so we built you one instead. Turn the pages — there's more than it looks.",
           font: "serif",
           placement: { x: 50, y: 55, rotate: 1, width: 72 },
         },
@@ -44,14 +43,14 @@ export const sampleJournal: Journal = {
           kind: "envelope",
           frontLabel: "Open me first",
           message:
-            "Twelve months ago you told us you wanted a quieter, braver year. You did it. We're so proud of you. 💛",
+            "We just wanted you to know how much you mean to us. That's it — that's the whole message. 💛",
           placement: { x: 50, y: 80, rotate: -3, width: 60, z: 3 },
         },
       ],
       decorations: [
         { id: "p1-d1", kind: "doodle", shape: "sparkle", placement: { x: 12, y: 10, width: 10 } },
         { id: "p1-d2", kind: "doodle", shape: "heart", color: "var(--color-blush)", placement: { x: 88, y: 14, width: 10 } },
-        { id: "p1-d3", kind: "sticker", emoji: "🎂", placement: { x: 85, y: 45, rotate: 6, width: 14 } },
+        { id: "p1-d3", kind: "sticker", emoji: "🎁", placement: { x: 85, y: 45, rotate: 6, width: 14 } },
         { id: "p1-d4", kind: "pin", variant: "pin", placement: { x: 50, y: 6, width: 8, z: 5 } },
       ],
     },
@@ -86,6 +85,9 @@ export const sampleJournal: Journal = {
     {
       id: "p3",
       label: "A voice note",
+      // Pages can override the journal's accent color — this one leans into
+      // a warmer tone than the sage default, just to show it's possible.
+      accentColor: "#d9a441",
       blocks: [
         {
           id: "p3-note",
@@ -99,7 +101,7 @@ export const sampleJournal: Journal = {
           kind: "audio",
           // Replace with your own hosted recording.
           src: "https://cdn.freesound.org/previews/612/612095_5674468-lq.mp3",
-          label: "Everyone says happy birthday",
+          label: "Everyone sends their love",
           placement: { x: 50, y: 58, rotate: 2, width: 74, z: 2 },
         },
         {
@@ -107,7 +109,7 @@ export const sampleJournal: Journal = {
           kind: "envelope",
           frontLabel: "For later",
           message:
-            "Open this again next year. We'll have added a new page by then. This journal doesn't end. 🌱",
+            "Open this again sometime. We might have added a new page by then. This journal doesn't really end. 🌱",
           placement: { x: 50, y: 84, rotate: -2, width: 58, z: 3 },
         },
       ],
